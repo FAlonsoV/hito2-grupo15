@@ -59,7 +59,10 @@ real = originales.loc[id_defecto]
 st.sidebar.caption(f"Valores reales: {real['espesor']} mm · cinta {real['cinta']} · {real['acero']}. "
                    "Cada control parte en el valor más cercano.")
 espesor = st.sidebar.select_slider("Espesor de la plancha (mm)", espesores, value=cercano(espesores, real["espesor"]))
-cinta = st.sidebar.select_slider("Largo de la cinta (corta ~1.360 · larga ~1.690)", cintas, value=cercano(cintas, real["cinta"]))
+# La planta tiene dos líneas: la corta (cinta ~1.360) y la larga (cinta ~1.690); casi no hay valores intermedios
+linea = st.sidebar.radio("Línea de producción", ["corta", "larga"], index=0 if real["cinta"] < 1500 else 1,
+                         horizontal=True, help="Línea corta: cinta ~1.360 · línea larga: cinta ~1.690")
+cinta = 1360 if linea == "corta" else 1690                  # valor típico de cada línea
 acero = st.sidebar.radio("Tipo de acero", ["A300", "A400"], index=0 if real["acero"] == "A300" else 1, horizontal=True)
 st.sidebar.divider()
 st.sidebar.caption("🟢 bajo < 18,7 % · 🟠 medio 18,7–50 % · 🔴 alto ≥ 50 %")
@@ -71,7 +74,6 @@ prob = fila[defectos].astype(float).values / 100
 p_critica = prob[defectos.index(critica)] * 100
 p_original = real[critica]
 clase_predicha = defectos[prob.argmax()]
-linea = "corta" if cinta < 1500 else "larga"
 
 # Decisión según el riesgo calculado por el modelo
 if p_critica >= 50:
@@ -128,4 +130,4 @@ with st.expander("📌 Ventana de operación (bloque 15 del notebook)", expanded
     st.caption("Es una asociación en defectos ya detectados: cambiar de línea es una hipótesis para un piloto, no una causa probada.")
 
 st.caption("Probabilidades calculadas con el mismo modelo TabPFN del notebook para una grilla de escenarios "
-           "(60 defectos del test · 11 espesores · 10 largos de cinta · 2 aceros).")
+           "(60 defectos del test · 11 espesores · 2 líneas · 2 aceros).")
